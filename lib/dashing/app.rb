@@ -7,6 +7,7 @@ require 'sass'
 require 'json'
 require 'yaml'
 require 'thin'
+require 'redis-objects'
 
 SCHEDULER = Rufus::Scheduler.new
 
@@ -35,7 +36,19 @@ set :views, File.join(settings.root, 'dashboards')
 set :default_dashboard, nil
 set :auth_token, nil
 
-if File.exists?(settings.history_file)
+if ENV.has_key? 'REDISCLOUD_URL'
+  # Redis URI is stored in the REDISTOGO_URL environment variable
+  # Use Redis for our event history storage
+  # This works because a 'HashKey' object from redis-objects allows
+  # the index access hash[id] and set hash[id] = XYZ that dashing
+  # applies to the history setting to store events
+  redis_uri = URI.parse(ENV["REDISCLOUD_URL"])
+  Redis.current = Redis.new(:host => redis_uri.host,
+                            :port => redis_uri.port,
+                            :password => redis_uri.password)
+
+  set history: Redis::HashKey.new('dashing-hash')
+elsif File.exists?(settings.history_file)
   set history: YAML.load_file(settings.history_file)
 else
   set history: {}
