@@ -47,7 +47,7 @@ if ENV.has_key? 'REDISCLOUD_URL'
                             :port => redis_uri.port,
                             :password => redis_uri.password)
 
-  set history: Redis::HashKey.new('dashing-hash')
+  set history: Redis::HashKey.new('dashing-history', :marshal => true) #Redis::HashKey.new('dashing-hash')
 elsif File.exists?(settings.history_file)
   set history: YAML.load_file(settings.history_file)
 else
